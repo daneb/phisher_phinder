@@ -1,17 +1,45 @@
 require 'spec_helper'
-require 'pry'
+require 'ipaddr'
 
 RSpec.describe Overphishing::MailParser do
   let(:complete_mail_contents) { IO.read(File.join(FIXTURE_PATH, 'mail_1.txt')) }
   let(:simple_mail_contents) { IO.read(File.join(FIXTURE_PATH, 'mail_2.txt')) }
+  let(:enriched_ip_1) { instance_double(Overphishing::EnrichedIp) }
+  let(:enriched_ip_2) { instance_double(Overphishing::EnrichedIp) }
+  let(:enriched_ip_3) { instance_double(Overphishing::EnrichedIp) }
+  let(:enriched_ip_4) { instance_double(Overphishing::EnrichedIp) }
+  let(:enriched_ip_factory) do
+    instance_double(Overphishing::EnrichedIpFactory).tap do |factory|
+      allow(factory).to receive(:build) do |arg|
+        case arg
+        when '2002:a4a:d031:0:0:0:0:0'
+          enriched_ip_1
+        when '2002:a17:902:a706::'
+          enriched_ip_2
+        when '10.0.0.1'
+          enriched_ip_3
+        when '10.0.0.2'
+          enriched_ip_4
+        end
+      end
+      allow(factory).to receive(:good_input?) do |arg|
+        case arg
+        when 'mx.google.com'
+          false
+        else
+          true
+        end
+      end
+    end
+  end
   let(:original_mail_body) { "This is the body\n" }
   let(:original_mail_headers) do
     "Delivered-To: dummy@test.com\n" +
     "Received: by 2002:a4a:d031:0:0:0:0:0 with SMTP id w17csp2701290oor;\n" +
     "        Sat, 25 Apr 2020 22:14:05 -0700 (PDT)"
   end
-  let(:parsed_complete_mail) { described_class.new.parse(complete_mail_contents) }
-  let(:parsed_simple_mail) { described_class.new.parse(simple_mail_contents) }
+  let(:parsed_complete_mail) { described_class.new(enriched_ip_factory).parse(complete_mail_contents) }
+  let(:parsed_simple_mail) { described_class.new(enriched_ip_factory).parse(simple_mail_contents) }
   let(:received_header_value) do
     "by 2002:a4a:d031:0:0:0:0:0 with SMTP id w17csp2701290oor; Sat, 25 Apr 2020 22:14:05 -0700 (PDT)"
   end
@@ -52,7 +80,7 @@ RSpec.describe Overphishing::MailParser do
             id: 'w17csp2701290oor',
             partial: true,
             protocol: 'SMTP',
-            recipient: '2002:a4a:d031:0:0:0:0:0',
+            recipient: enriched_ip_1,
             recipient_mailbox: 'anotherdummy@test.com',
             sender: nil,
             time: Time.new(2020, 4, 25, 22, 14, 7, '-07:00')
@@ -62,7 +90,7 @@ RSpec.describe Overphishing::MailParser do
             id: 'w6mr17215337plq.173.1587878045528',
             partial: true,
             protocol: 'SMTP',
-            recipient: '2002:a17:902:a706::',
+            recipient: enriched_ip_2,
             recipient_mailbox: nil,
             sender: nil,
             time: Time.new(2020, 4, 25, 22, 14, 6, '-07:00')
@@ -74,7 +102,7 @@ RSpec.describe Overphishing::MailParser do
             protocol: 'ESMTP',
             recipient: 'mx.google.com',
             recipient_mailbox: 'dummy@test.com',
-            sender: {host: 'my.dodgy.host.com', ip: '10.0.0.1'},
+            sender: {host: 'my.dodgy.host.com', ip: enriched_ip_3},
             time: Time.new(2020, 4, 25, 22, 14, 5, '-07:00')
           },
           {
@@ -84,7 +112,7 @@ RSpec.describe Overphishing::MailParser do
             protocol: nil,
             recipient: nil,
             recipient_mailbox: nil,
-            sender: {host: 'another.dodgy.host.com', ip: '10.0.0.2'},
+            sender: {host: 'another.dodgy.host.com', ip: enriched_ip_4},
             time: nil
           }
         ])
