@@ -3,6 +3,7 @@ require 'spec_helper'
 
 RSpec.describe Overphishing::CachedGeoipClient do
   let(:client) { instance_double(MaxMind::GeoIP2::Client, insights: insight) }
+  let(:expiry_time) { Time.now - 60 }
   let(:insight) do
     MaxMind::GeoIP2::Model::Insights.new(record, ["en"])
   end
@@ -69,7 +70,7 @@ RSpec.describe Overphishing::CachedGeoipClient do
     }
   end
   describe 'no entry in the database' do
-    subject { described_class.new(client) }
+    subject { described_class.new(client, expiry_time) }
 
     it 'queries the geoip service to get data for the ip address' do
       expect(client).to receive(:insights).with('1.1.1.1')
@@ -109,5 +110,42 @@ RSpec.describe Overphishing::CachedGeoipClient do
       expect(record.static_ip_score).to eql '21.5'
       expect(record.user_type).to eql 'residential'
     end
+
+    it 'returns a persisted record rather than performing a lookup if a record exists' do
+      Overphishing::GeoipIpData.create(
+        ip_address: '1.1.1.1', country_name: "People's Republic of Hout Bay", updated_at: expiry_time
+      )
+
+      expect(client).to_not receive(:insights)
+
+      record = subject.lookup('1.1.1.1')
+
+      expect(record.country_name).to eql  "People's Republic of Hout Bay"
+    end
+
+    it 'replaces a persisted record if the record was last updated outside the expiry window', :aggregate_failures do
+      persisted_record = Overphishing::GeoipIpData.create(
+        ip_address: '1.1.1.1', country_name: "People's Republic of Hout Bay"
+      )
+      persisted_record.this.update(updated_at: expiry_time - 1)
+
+      record = subject.lookup('1.1.1.1')
+
+      expect(persisted_record.reload.country_name).to eql 'South Africa'
+      expect(record.country_name).to eql 'South Africa'
+    end
+
+    it 'replaces a persisted record if the record was last updated on the edge of the expiry window', :aggregate_failures do
+      persisted_record = Overphishing::GeoipIpData.create(
+        ip_address: '1.1.1.1', country_name: "People's Republic of Hout Bay"
+      )
+      persisted_record.this.update(updated_at: expiry_time)
+
+      record = subject.lookup('1.1.1.1')
+
+      expect(persisted_record.reload.country_name).to eql 'South Africa'
+      expect(record.country_name).to eql 'South Africa'
+    end
+
   end
 end
