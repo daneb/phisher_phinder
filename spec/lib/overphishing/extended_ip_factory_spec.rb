@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper'
 
-RSpec.describe Overphishing::EnrichedIpFactory do
+RSpec.describe Overphishing::ExtendedIpFactory do
   let(:geoip_client) { instance_double(Overphishing::CachedGeoipClient, lookup: geoip_ip_data) }
   let(:geoip_ip_data) { instance_double(Overphishing::GeoipIpData) }
   let(:ip_address_string) { '255.255.255.255' }
@@ -17,6 +17,6 @@ RSpec.describe Overphishing::EnrichedIpFactory do
   it 'instantiates an enriched ip instance' do
     ip = subject.build(ip_address_string)
 
-    expect(ip).to eq(Overphishing::EnrichedIp.new(ip_address: ip_address_string, geoip_ip_data: geoip_ip_data))
+    expect(ip).to eq(Overphishing::ExtendedIp.new(ip_address: ip_address_string, geoip_ip_data: geoip_ip_data))
   end
 end

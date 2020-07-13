@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'spec_helper'
 
-RSpec.describe Overphishing::EnrichedIp do
+RSpec.describe Overphishing::ExtendedIp do
   let(:geoip_data_1) do
     Overphishing::GeoipIpData.create(ip_address: '10.0.0.1')
   end
