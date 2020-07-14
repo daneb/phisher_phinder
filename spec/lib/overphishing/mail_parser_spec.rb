@@ -4,11 +4,11 @@ require 'ipaddr'
 RSpec.describe Overphishing::MailParser do
   let(:complete_mail_contents) { IO.read(File.join(FIXTURE_PATH, 'mail_1.txt')) }
   let(:simple_mail_contents) { IO.read(File.join(FIXTURE_PATH, 'mail_2.txt')) }
-  let(:enriched_ip_1) { instance_double(Overphishing::ExtendedIp) }
-  let(:enriched_ip_2) { instance_double(Overphishing::ExtendedIp) }
-  let(:enriched_ip_3) { instance_double(Overphishing::ExtendedIp) }
-  let(:enriched_ip_4) { instance_double(Overphishing::ExtendedIp) }
-  let(:enriched_ip_5) { instance_double(Overphishing::ExtendedIp) }
+  let(:enriched_ip_1) { instance_double(Overphishing::RoutableIp) }
+  let(:enriched_ip_2) { instance_double(Overphishing::RoutableIp) }
+  let(:enriched_ip_3) { instance_double(Overphishing::RoutableIp) }
+  let(:enriched_ip_4) { instance_double(Overphishing::RoutableIp) }
+  let(:enriched_ip_5) { instance_double(Overphishing::RoutableIp) }
   let(:enriched_ip_factory) do
     instance_double(Overphishing::ExtendedIpFactory).tap do |factory|
       allow(factory).to receive(:build) do |arg|

@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 require 'spec_helper'
 
-RSpec.describe Overphishing::ExtendedIp do
+RSpec.describe Overphishing::RoutableIp do
   let(:geoip_data_1) do
-    Overphishing::GeoipIpData.create(ip_address: '10.0.0.1')
+    Overphishing::GeoipIpData.create(ip_address: '99.99.99.98')
   end
   let(:geoip_data_2) do
-    Overphishing::GeoipIpData.create(ip_address: '10.0.0.1')
+    Overphishing::GeoipIpData.create(ip_address: '99.99.99.99')
   end
-  let(:ip_address_1) { '10.0.0.1' }
-  let(:ip_address_2) { '10.0.0.2' }
+  let(:ip_address_1) { '99.99.99.98' }
+  let(:ip_address_2) { '99.99.99.99' }
 
   subject { described_class.new(ip_address: ip_address_1, geoip_ip_data: geoip_data_1) }
 

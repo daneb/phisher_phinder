@@ -7,7 +7,7 @@ module Overphishing
     end
 
     def build(ip_string)
-      ExtendedIp.new(ip_address: ip_string, geoip_ip_data: @geoip_client.lookup(ip_string))
+      RoutableIp.new(ip_address: ip_string, geoip_ip_data: @geoip_client.lookup(ip_string))
     end
 
     def good_input?(data)

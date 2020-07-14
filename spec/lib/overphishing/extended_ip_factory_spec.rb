@@ -17,6 +17,6 @@ RSpec.describe Overphishing::ExtendedIpFactory do
   it 'instantiates an enriched ip instance' do
     ip = subject.build(ip_address_string)
 
-    expect(ip).to eq(Overphishing::ExtendedIp.new(ip_address: ip_address_string, geoip_ip_data: geoip_ip_data))
+    expect(ip).to eq(Overphishing::RoutableIp.new(ip_address: ip_address_string, geoip_ip_data: geoip_ip_data))
   end
 end
