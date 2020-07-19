@@ -13,7 +13,7 @@ module Overphishing
       if non_public_ip?(ip)
         SimpleIp.new(ip_address: ip)
       else
-        ExtendedIp.new(ip_address: ip, geoip_ip_data: @geoip_client.lookup(ip_string))
+        ExtendedIp.new(ip_address: ip, geoip_ip_data: geoip_data(ip_string))
       end
     rescue IPAddr::InvalidAddressError
     end
@@ -41,6 +41,11 @@ module Overphishing
 
     def ipv4_class_c_private?(ip)
       IPAddr.new('192.168.0.0/16').include?(ip)
+    end
+
+    def geoip_data(ip_string)
+      @geoip_client.lookup(ip_string)
+    rescue MaxMind::GeoIP2::AddressNotFoundError
     end
   end
 end
