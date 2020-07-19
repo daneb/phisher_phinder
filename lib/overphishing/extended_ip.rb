@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Overphishing
-  class RoutableIp
+  class ExtendedIp
     attr_reader :ip_address, :geoip_ip_data
 
     def initialize(ip_address:, geoip_ip_data:)

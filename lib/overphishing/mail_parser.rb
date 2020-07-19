@@ -162,7 +162,7 @@ module Overphishing
     end
 
     def enrich_recipient(recipient)
-      @enriched_ip_factory.good_input?(recipient) ? @enriched_ip_factory.build(recipient) : recipient
+      @enriched_ip_factory.build(recipient) || recipient
     end
 
     def is_ip?(data)
