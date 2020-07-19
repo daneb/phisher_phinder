@@ -35,7 +35,6 @@ module Overphishing
     def parse_headers(headers_array)
       headers_array.each_with_index.inject({}) do |memo, (header_string, index)|
         header, value = header_string.split(":", 2)
-        binding.pry unless value
         sequence = headers_array.length - index - 1
         memo.merge(convert_header_name(header) => enrich_header_value(value, sequence)) do |_, existing, new|
           if existing.is_a? Array
@@ -96,6 +95,7 @@ module Overphishing
         partial: true,
         protocol: nil,
         recipient: nil,
+        recipient_additional: nil,
         recipient_mailbox: nil,
         sender: nil,
         starttls: nil,
@@ -123,9 +123,21 @@ module Overphishing
       end
 
       if by_part
-        matches = by_part.match(/by\s(?<recipient>\S+)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/)
+        patterns = [
+          /by\s(?<recipient>\S+)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/,
+          /by\s(?<recipient>\S+)\s\((?<additional>[^)]+)\)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/
+        ]
 
-        base.merge!(recipient: enrich_recipient(matches[:recipient]), protocol: matches[:protocol], id: matches[:id])
+        matches = patterns.inject(nil) do |memo, pattern|
+          memo || by_part.match(pattern)
+        end
+
+        base.merge!(
+          recipient: enrich_recipient(matches[:recipient]),
+          protocol: matches[:protocol],
+          id: matches[:id],
+          recipient_additional: matches.names.include?('additional') ? matches[:additional] : nil
+        )
       end
 
       if for_part

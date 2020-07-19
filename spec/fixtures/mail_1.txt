@@ -34,7 +34,7 @@ ARC-Authentication-Results: i=1; mx.google.com;
        spf=pass (google.com: best guess record for domain of scam@my.dodgy.host.com designates 10.0.0.1 as permitted sender) smtp.mailfrom=scam@my.dodgy.host.com
 Return-Path: <somethingdodgy@test.com>
 Received: from not.real.com (my.dodgy.host.com. [10.0.0.4])
-        by mx.google.com with ESMTP id b201si8173212pfb.88.2020.04.25.22.14.05
+        by mx.google.com (8.14.7/8.14.7) with ESMTP id b201si8173212pfb.88.2020.04.25.22.14.05
         for <dummy@test.com>;
         Sat, 25 Apr 2020 22:14:05 -0700 (PDT)
 Received-SPF: pass (google.com: best guess record for domain of scam@my.dodgy.host.com designates 10.0.0.1 as permitted sender) client-ip=10.0.0.1;
