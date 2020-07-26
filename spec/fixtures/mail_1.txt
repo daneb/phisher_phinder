@@ -41,6 +41,7 @@ Received-SPF: pass (google.com: best guess record for domain of scam@my.dodgy.ho
 Authentication-Results: mx.google.com;
      spf=pass (google.com: best guess record for domain of scam@my.dodgy.host.com designates 10.0.0.1 as permitted sender) smtp.mailfrom=scam@my.dodgy.host.com
 Received: from still.not.real.com (another.dodgy.host.com. 10.0.0.5)
+Received: (from root@localhost) by still.dodgy.host.com (8.14.7/8.14.7/Submit) id 05QDRrso001911
 From: "🔔ALERT🔔" <do_not@believethis.com>
 MIME-Version: 080.517
 Date: Sun, 26 Apr 2020 01:14:04 -0400

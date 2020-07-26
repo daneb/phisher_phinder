@@ -135,6 +135,18 @@ RSpec.describe Overphishing::MailParser do
             sender: {host: 'another.dodgy.host.com', ip: enriched_ip_5},
             starttls: nil,
             time: nil
+          },
+          {
+            advertised_sender: 'root@localhost',
+            id: '05QDRrso001911',
+            partial: true,
+            protocol: nil,
+            recipient: 'still.dodgy.host.com',
+            recipient_additional: '8.14.7/8.14.7/Submit',
+            recipient_mailbox: nil,
+            sender: {host: nil, ip: nil},
+            starttls: nil,
+            time: nil
           }
         ])
       end

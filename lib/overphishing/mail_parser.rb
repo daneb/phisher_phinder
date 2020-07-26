@@ -84,7 +84,11 @@ module Overphishing
 
       scanner = StringScanner.new(data)
 
-      from_part = scanner.scan(/from\s.+?\([^)]+?\)/)
+      if scanner.check(/\(from\s+[^)]+\)/)
+        from_part = scanner.scan(/\(from\s+[^)]+\)/)
+      else
+        from_part = scanner.scan(/from\s.+?\([^)]+?\)/)
+      end
       by_part = scanner.scan(/\s?by.+?id\s[\S]+\s?/) unless scanner.eos?
       for_part = scanner.scan(/for\s+\S+/) unless scanner.eos?
       starttls_part = scanner.rest unless scanner.eos?
@@ -106,7 +110,8 @@ module Overphishing
         patterns = [
           /from\s(?<advertised_sender>[\S]+)\s\((?<sender_host>\S+?)\.?\s\[(?<sender_ip>[^\]]+)\]\)/,
           /from\s(?<advertised_sender>\S+)\s\((?<sender_host>\S+?)\.?\s(?<sender_ip>\S+?)\)/,
-          /from\s(?<advertised_sender>\S+)\s\(\[(?<sender_ip>[^\]]+)\]\)/
+          /from\s(?<advertised_sender>\S+)\s\(\[(?<sender_ip>[^\]]+)\]\)/,
+          /\(from\s(?<advertised_sender>[^)]+)\)/
         ]
 
         matches = patterns.inject(nil) do |memo, pattern|
@@ -117,7 +122,7 @@ module Overphishing
           advertised_sender: matches[:advertised_sender],
           sender: {
             host: matches.names.include?('sender_host') ? matches[:sender_host] : nil,
-            ip: @enriched_ip_factory.build(matches[:sender_ip])
+            ip: matches.names.include?('sender_ip') ? @enriched_ip_factory.build(matches[:sender_ip]) : nil
           }
         )
       end
@@ -125,7 +130,8 @@ module Overphishing
       if by_part
         patterns = [
           /by\s(?<recipient>\S+)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/,
-          /by\s(?<recipient>\S+)\s\((?<additional>[^)]+)\)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/
+          /by\s(?<recipient>\S+)\s\((?<additional>[^)]+)\)\swith\s(?<protocol>\S+)\sid\s(?<id>\S+)/,
+          /by\s(?<recipient>\S+)\s\((?<additional>[^)]+)\)\sid\s(?<id>\S+)/
         ]
 
         matches = patterns.inject(nil) do |memo, pattern|
@@ -134,7 +140,7 @@ module Overphishing
 
         base.merge!(
           recipient: enrich_recipient(matches[:recipient]),
-          protocol: matches[:protocol],
+          protocol: matches.names.include?('protocol') ? matches[:protocol]: nil,
           id: matches[:id],
           recipient_additional: matches.names.include?('additional') ? matches[:additional] : nil
         )
@@ -149,6 +155,8 @@ module Overphishing
       if starttls_part
         matches = starttls_part.match(/\(version=(?<version>\S+)\scipher=(?<cipher>\S+)\sbits=(?<bits>\S+)\)/)
 
+        require 'pry'
+        binding.pry unless matches
         base.merge!(starttls: {version: matches[:version], cipher: matches[:cipher], bits: matches[:bits]})
       end
 
