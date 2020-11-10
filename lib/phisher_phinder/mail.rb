@@ -2,21 +2,28 @@
 
 module PhisherPhinder
   class Mail
-    attr_reader :original_email, :original_headers, :original_body, :headers, :tracing_headers, :body
+    attr_reader :original_email,
+      :original_headers,
+      :original_body,
+      :headers,
+      :tracing_headers,
+      :body,
+      :authentication_headers
 
     def initialize(
-      original_email:, original_headers:, original_body:, headers:, tracing_headers:, body:
+      original_email:, original_headers:, original_body:, headers:, tracing_headers:, body:, authentication_headers:
     )
       @original_email = original_email
       @original_headers = original_headers
       @original_body = original_body
       @headers = headers
       @tracing_headers = tracing_headers
+      @authentication_headers = authentication_headers
       @body = body
     end
 
     def reply_to_addresses
-      @headers[:reply_to].map do |value_string|
+      (@headers[:reply_to] || []).map do |value_string|
         value_string.split(",")
       end.flatten.map do |email_address_string|
         extract_email_address(email_address_string)

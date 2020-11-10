@@ -19,7 +19,8 @@ module PhisherPhinder
           original_body: original_body,
           headers: headers,
           tracing_headers: generate_tracing_headers(headers),
-          body: parse_body(original_body, headers)
+          body: parse_body(original_body, headers),
+          authentication_headers: generate_authentication_headers(headers)
         )
       end
 
@@ -41,12 +42,8 @@ module PhisherPhinder
         headers_array.each_with_index.inject({}) do |memo, (header_string, index)|
           header, value = header_string.split(":", 2)
           sequence = headers_array.length - index - 1
-          memo.merge(convert_header_name(header) => enrich_header_value(value, sequence)) do |_, existing, new|
-            if existing.is_a? Array
-              existing << new
-            else
-              [existing, new]
-            end
+          memo.merge(convert_header_name(header) => [enrich_header_value(value, sequence)]) do |_, existing, new|
+            existing + new
           end
         end
       end
@@ -61,16 +58,8 @@ module PhisherPhinder
 
       def generate_tracing_headers(headers)
         received_header_values = headers.inject([]) do |memo, (header_name, header_value)|
-          if [:received, :x_received].include? header_name
-            if header_value.is_a? Array
-              memo +=  header_value
-            else
-              memo << header_value
-            end
-          end
-
-          memo
-        end.flatten
+          [:received, :x_received].include?(header_name) ? memo + header_value : memo
+        end
 
         {
           received: restore_sequence(received_header_values).map { |v| parse_received_header(v[:data]) }
@@ -78,11 +67,15 @@ module PhisherPhinder
       end
 
       def parse_received_header(value)
+        starttls_parser = MailParser::ReceivedHeaders::StarttlsParser.new
         parser = MailParser::ReceivedHeaders::Parser.new(
-          by_parser: MailParser::ReceivedHeaders::ByParser.new(@enriched_ip_factory),
-          for_parser: MailParser::ReceivedHeaders::ForParser.new,
-          from_parser: MailParser::ReceivedHeaders::FromParser.new(@enriched_ip_factory),
-          starttls_parser: MailParser::ReceivedHeaders::StarttlsParser.new,
+          by_parser: MailParser::ReceivedHeaders::ByParser.new(
+            ip_factory: @enriched_ip_factory, starttls_parser: starttls_parser
+          ),
+          for_parser: MailParser::ReceivedHeaders::ForParser.new(starttls_parser: starttls_parser),
+          from_parser: MailParser::ReceivedHeaders::FromParser.new(
+            ip_factory: @enriched_ip_factory, starttls_parser: starttls_parser
+          ),
           timestamp_parser: MailParser::ReceivedHeaders::TimestampParser.new,
           classifier: MailParser::ReceivedHeaders::Classifier.new
         )
@@ -96,8 +89,8 @@ module PhisherPhinder
       def parse_body(original_body, headers)
         MailParser::BodyParser.new(@line_end).parse(
           body_contents: original_body,
-          content_type: headers.dig(:content_type, :data),
-          content_transfer_encoding: headers.dig(:content_transfer_encoding, :data),
+          content_type: content_type_data(headers),
+          content_transfer_encoding: content_transfer_encoding_data(headers),
         )
       end
 
@@ -105,6 +98,23 @@ module PhisherPhinder
         if Base64.strict_encode64(Base64.decode64(text)) == text.gsub(/#{@line_end}/, '')
           Base64.decode64(text)
         end
+      end
+
+      def content_type_data(headers)
+        (headers[:content_type] && headers[:content_type].first[:data]) || nil
+      end
+
+      def content_transfer_encoding_data(headers)
+        (headers[:content_transfer_encoding] && headers[:content_transfer_encoding].first[:data]) || nil
+      end
+
+      def generate_authentication_headers(headers)
+        auth_parser = MailParser::AuthenticationHeaders::Parser.new(
+          authentication_results_parser: MailParser::AuthenticationHeaders::AuthResultsParser.new(
+            ip_factory: @enriched_ip_factory
+          )
+        )
+        auth_parser.parse(headers)
       end
     end
   end
